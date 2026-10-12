@@ -8,6 +8,7 @@ import {
   Settings,
   Waypoints,
 } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -20,6 +21,8 @@ const nav = [
 ];
 
 export function Sidebar() {
+  const { pathname } = useLocation();
+
   return (
     <aside className="glass hidden h-screen w-64 shrink-0 flex-col rounded-none border-l-0 border-t-0 border-b-0 lg:flex">
       <div className="flex items-center gap-3 px-6 py-6">
@@ -41,12 +44,21 @@ export function Sidebar() {
             <motion.a
               key={item.label}
               href={item.href}
+              aria-current={
+                (item.label === "Dashboard" && pathname === "/") ||
+                (item.label === "Reports" && pathname.startsWith("/reports")) ||
+                (item.label === "Settings" && pathname.startsWith("/settings"))
+                  ? "page"
+                  : undefined
+              }
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.04 }}
               className={cn(
                 "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                item.active
+                ((item.label === "Dashboard" && pathname === "/") ||
+                  (item.label === "Reports" && pathname.startsWith("/reports")) ||
+                  (item.label === "Settings" && pathname.startsWith("/settings")))
                   ? "bg-sidebar-accent text-foreground shadow-inner"
                   : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
               )}
@@ -54,11 +66,17 @@ export function Sidebar() {
               <item.icon
                 className={cn(
                   "h-4 w-4 shrink-0",
-                  item.active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                  ((item.label === "Dashboard" && pathname === "/") ||
+                    (item.label === "Reports" && pathname.startsWith("/reports")) ||
+                    (item.label === "Settings" && pathname.startsWith("/settings")))
+                    ? "text-primary"
+                    : "text-muted-foreground group-hover:text-foreground",
                 )}
               />
               <span className="truncate">{item.label}</span>
-              {item.active && (
+              {((item.label === "Dashboard" && pathname === "/") ||
+                (item.label === "Reports" && pathname.startsWith("/reports")) ||
+                (item.label === "Settings" && pathname.startsWith("/settings"))) && (
                 <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px] shadow-primary" />
               )}
             </motion.a>

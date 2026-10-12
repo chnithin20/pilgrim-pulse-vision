@@ -4,6 +4,7 @@ import { engine, useSimulation } from "@/simulation/hooks";
 import { computeDensityGrid, heatColor } from "@/simulation/analytics";
 import { LOCATIONS, MAP_ROUTE_EDGES } from "@/simulation/engine";
 import type { LocationStat } from "@/simulation/types";
+import { cn } from "@/lib/utils";
 
 const levelColor: Record<LocationStat["level"], string> = {
   critical: "bg-destructive shadow-destructive",
@@ -107,10 +108,15 @@ export function TwinMap() {
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [showRoutes, setShowRoutes] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFallbackFullscreen, setIsFallbackFullscreen] = useState(false);
+  const fullscreen = isFullscreen || isFallbackFullscreen;
   useCanvasRenderer(canvasRef, showHeatmap, showRoutes);
 
   useEffect(() => {
-    const onFullscreenChange = () => setIsFullscreen(document.fullscreenElement === mapRef.current);
+    const onFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === mapRef.current);
+      setIsFallbackFullscreen(false);
+    };
     document.addEventListener("fullscreenchange", onFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
@@ -118,13 +124,27 @@ export function TwinMap() {
   const toggleFullscreen = async () => {
     if (document.fullscreenElement) {
       await document.exitFullscreen();
+    } else if (isFallbackFullscreen) {
+      setIsFallbackFullscreen(false);
+    } else if (!document.fullscreenEnabled || !mapRef.current?.requestFullscreen) {
+      setIsFallbackFullscreen(true);
     } else {
-      await mapRef.current?.requestFullscreen();
+      try {
+        await mapRef.current.requestFullscreen();
+      } catch {
+        setIsFallbackFullscreen(true);
+      }
     }
   };
 
   return (
-    <div ref={mapRef} className="glass relative flex h-full min-h-[420px] flex-col overflow-hidden rounded-2xl">
+    <div
+      ref={mapRef}
+      className={cn(
+        "glass relative flex h-full min-h-[420px] flex-col overflow-hidden rounded-2xl",
+        fullscreen && "fixed inset-0 z-50 rounded-none",
+      )}
+    >
       <div className="flex items-center justify-between border-b border-border px-5 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <Radio className="h-4 w-4 text-primary" />
@@ -149,8 +169,8 @@ export function TwinMap() {
           <button
             type="button"
             onClick={toggleFullscreen}
-            aria-label={isFullscreen ? "Exit fullscreen map" : "Open fullscreen map"}
-            title={isFullscreen ? "Exit fullscreen" : "Open fullscreen"}
+            aria-label={fullscreen ? "Exit fullscreen map" : "Open fullscreen map"}
+            title={fullscreen ? "Exit fullscreen" : "Open fullscreen"}
             className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
           >
             <Maximize2 className="h-4 w-4" />

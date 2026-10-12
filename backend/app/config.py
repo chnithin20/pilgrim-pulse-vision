@@ -14,6 +14,7 @@ class Settings:
     PORT: int = int(os.getenv("PORT", 8000))
 
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./pilgrim_pulse.db")
+    SQL_ECHO: bool = os.getenv("SQL_ECHO", "false").lower() in {"1", "true", "yes"}
     CORS_ORIGINS: list[str] = [
         origin.strip()
         for origin in os.getenv(
