@@ -11,12 +11,12 @@ import {
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { label: "Dashboard", icon: LayoutDashboard, active: true },
-  { label: "Simulation", icon: Activity },
-  { label: "Predictions", icon: Brain },
-  { label: "Analytics", icon: BarChart3 },
-  { label: "Reports", icon: FileText },
-  { label: "Settings", icon: Settings },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/#dashboard", active: true },
+  { label: "Simulation", icon: Activity, href: "/#simulation" },
+  { label: "Predictions", icon: Brain, href: "/#predictions" },
+  { label: "Analytics", icon: BarChart3, href: "/#analytics" },
+  { label: "Reports", icon: FileText, href: "/reports" },
+  { label: "Settings", icon: Settings, href: "/settings" },
 ];
 
 export function Sidebar() {
@@ -38,8 +38,9 @@ export function Sidebar() {
         </p>
         <nav className="flex flex-col gap-1">
           {nav.map((item, i) => (
-            <motion.button
+            <motion.a
               key={item.label}
+              href={item.href}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.04 }}
@@ -60,7 +61,7 @@ export function Sidebar() {
               {item.active && (
                 <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px] shadow-primary" />
               )}
-            </motion.button>
+            </motion.a>
           ))}
         </nav>
       </div>

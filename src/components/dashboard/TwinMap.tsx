@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Layers, Maximize2, MapPin, Radio } from "lucide-react";
 import { engine, useSimulation } from "@/simulation/hooks";
 import { computeDensityGrid, heatColor } from "@/simulation/analytics";
@@ -19,7 +19,11 @@ const levelStroke: Record<LocationStat["level"], string> = {
   low: "#22c55e",
 };
 
-function useCanvasRenderer(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
+function useCanvasRenderer(
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  showHeatmap: boolean,
+  showRoutes: boolean,
+) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -44,35 +48,37 @@ function useCanvasRenderer(canvasRef: React.RefObject<HTMLCanvasElement | null>)
       const H = rect.height;
       ctx.clearRect(0, 0, W, H);
 
-      // crowd density heatmap (green → yellow → orange → red)
       const agents = engine.agents;
-      const gridW = 40;
-      const gridH = 30;
-      const density = computeDensityGrid(agents, gridW, gridH);
-      const cellW = W / gridW;
-      const cellH = H / gridH;
-      for (let gy = 0; gy < gridH; gy++) {
-        for (let gx = 0; gx < gridW; gx++) {
-          const v = density[gy * gridW + gx];
-          if (v < 0.08) continue;
-          ctx.fillStyle = heatColor(v);
-          ctx.fillRect(gx * cellW, gy * cellH, cellW + 1, cellH + 1);
+      if (showHeatmap) {
+        const gridW = 40;
+        const gridH = 30;
+        const density = computeDensityGrid(agents, gridW, gridH);
+        const cellW = W / gridW;
+        const cellH = H / gridH;
+        for (let gy = 0; gy < gridH; gy++) {
+          for (let gx = 0; gx < gridW; gx++) {
+            const v = density[gy * gridW + gx];
+            if (v < 0.08) continue;
+            ctx.fillStyle = heatColor(v);
+            ctx.fillRect(gx * cellW, gy * cellH, cellW + 1, cellH + 1);
+          }
         }
       }
 
-      // route network edges
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      for (const [fromId, toId] of MAP_ROUTE_EDGES) {
-        const a = LOCATIONS[fromId].pos;
-        const b = LOCATIONS[toId].pos;
-        ctx.beginPath();
-        ctx.moveTo(a.x * W, a.y * H);
-        ctx.lineTo(b.x * W, b.y * H);
-        ctx.stroke();
+      if (showRoutes) {
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        for (const [fromId, toId] of MAP_ROUTE_EDGES) {
+          const a = LOCATIONS[fromId].pos;
+          const b = LOCATIONS[toId].pos;
+          ctx.beginPath();
+          ctx.moveTo(a.x * W, a.y * H);
+          ctx.lineTo(b.x * W, b.y * H);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
       }
-      ctx.setLineDash([]);
 
       // agents
       ctx.fillStyle = "rgba(56, 189, 248, 0.85)";
@@ -91,16 +97,34 @@ function useCanvasRenderer(canvasRef: React.RefObject<HTMLCanvasElement | null>)
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [canvasRef]);
+  }, [canvasRef, showHeatmap, showRoutes]);
 }
 
 export function TwinMap() {
   const sim = useSimulation();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  useCanvasRenderer(canvasRef);
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [showRoutes, setShowRoutes] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useCanvasRenderer(canvasRef, showHeatmap, showRoutes);
+
+  useEffect(() => {
+    const onFullscreenChange = () => setIsFullscreen(document.fullscreenElement === mapRef.current);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await mapRef.current?.requestFullscreen();
+    }
+  };
 
   return (
-    <div className="glass relative flex h-full min-h-[420px] flex-col overflow-hidden rounded-2xl">
+    <div ref={mapRef} className="glass relative flex h-full min-h-[420px] flex-col overflow-hidden rounded-2xl">
       <div className="flex items-center justify-between border-b border-border px-5 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <Radio className="h-4 w-4 text-primary" />
@@ -110,10 +134,25 @@ export function TwinMap() {
           </span>
         </div>
         <div className="flex items-center gap-1">
-          <button className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground">
+          <button
+            type="button"
+            onClick={() => {
+              setShowHeatmap((visible) => !visible);
+              setShowRoutes((visible) => !visible);
+            }}
+            aria-label={`${showHeatmap ? "Hide" : "Show"} map layers`}
+            title={`${showHeatmap ? "Hide" : "Show"} heatmap`}
+            className={`grid h-8 w-8 place-items-center rounded-md hover:bg-secondary hover:text-foreground ${showHeatmap ? "text-primary" : "text-muted-foreground"}`}
+          >
             <Layers className="h-4 w-4" />
           </button>
-          <button className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground">
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? "Exit fullscreen map" : "Open fullscreen map"}
+            title={isFullscreen ? "Exit fullscreen" : "Open fullscreen"}
+            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
             <Maximize2 className="h-4 w-4" />
           </button>
         </div>

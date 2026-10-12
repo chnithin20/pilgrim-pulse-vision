@@ -46,7 +46,16 @@ export function Topbar() {
           <span className="font-mono">{now}</span>
         </div>
 
-        <button className="glass grid h-9 w-9 place-items-center rounded-full hover:bg-secondary/70">
+        <button
+          type="button"
+          onClick={() => {
+            const alerts = document.getElementById("alerts");
+            if (alerts) alerts.scrollIntoView({ behavior: "smooth" });
+            else window.location.href = "/#alerts";
+          }}
+          aria-label="View alerts"
+          className="glass grid h-9 w-9 place-items-center rounded-full hover:bg-secondary/70"
+        >
           <Bell className="h-4 w-4" />
           <span className="absolute mt-[-18px] ml-[18px] h-2 w-2 rounded-full bg-destructive" />
         </button>

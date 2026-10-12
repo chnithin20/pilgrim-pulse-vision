@@ -19,17 +19,21 @@ export interface PredictionResponse {
   zones: PredictionZone[];
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+export function getApiBaseUrl(): string {
+  const configuredUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
+  if (import.meta.env.DEV) return "http://localhost:8000";
+  return typeof window !== "undefined" ? window.location.origin : "";
+}
 
 /**
  * Fetches real-time XGBoost AI crowd density forecasts from FastAPI backend.
  */
 export async function fetchPredictions(): Promise<PredictionResponse> {
+  const apiBaseUrl = getApiBaseUrl();
   const candidateUrls = [
-    `${API_BASE_URL}/api/v1/predictions/`,
-    `http://localhost:8000/api/v1/predictions/`,
-    `/api/v1/predictions/`,
+    `${apiBaseUrl}/api/v1/predictions/`,
+    "/api/v1/predictions/",
   ];
 
   let lastError: Error | null = null;

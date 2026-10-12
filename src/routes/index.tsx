@@ -50,7 +50,7 @@ function Dashboard() {
   const predConfidence = sim.intelligence.overallConfidence;
 
   return (
-    <div className="flex min-h-screen">
+    <div id="dashboard" className="flex min-h-screen">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
@@ -105,10 +105,10 @@ function Dashboard() {
           </section>
 
           {/* Control */}
-          <ControlPanel />
+          <section id="simulation"><ControlPanel /></section>
 
           {/* XGBoost AI Prediction Panel */}
-          <PredictionPanel />
+          <section id="predictions"><PredictionPanel /></section>
 
           {/* Command Center */}
           <CommandCenter />
@@ -116,14 +116,14 @@ function Dashboard() {
           {/* Map + alerts */}
           <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <TwinMap />
-            <AlertsPanel />
+            <section id="alerts"><AlertsPanel /></section>
           </section>
 
           {/* Charts */}
-          <ChartsRow />
+          <section id="analytics"><ChartsRow /></section>
 
           {/* Status */}
-          <StatusBar />
+          <section id="status"><StatusBar /></section>
 
           <Footer />
         </main>

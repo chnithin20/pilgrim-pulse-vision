@@ -1,4 +1,5 @@
 import { PredictionResponse } from "./predictionApi";
+import { getApiBaseUrl } from "./predictionApi";
 
 export type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
 
@@ -30,11 +31,14 @@ function resolveWsUrl(): string {
   if (envUrl) {
     return envUrl.endsWith("/ws/predictions") ? envUrl : `${envUrl}/ws/predictions`;
   }
-  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  const apiBase = getApiBaseUrl();
   if (apiBase) {
     const wsHost = apiBase.replace(/^http(s)?:\/\//, "");
     const protocol = apiBase.startsWith("https") ? "wss:" : "ws:";
     return `${protocol}//${wsHost}/ws/predictions`;
+  }
+  if (typeof window !== "undefined") {
+    return `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws/predictions`;
   }
   return "ws://localhost:8000/ws/predictions";
 }
